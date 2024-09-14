@@ -54,6 +54,6 @@ export const Transactions=pgTable('transactions',{
      userId: integer('user_id').references(()=>Users.id).notNull(),
      type: varchar('type',{length:20}).notNull(),
      amount: integer('amount').notNull(),
-     description: text('descrption').notNull(),
+     description: text('description').notNull(),
      date: timestamp('date').defaultNow().notNull(),
 })
