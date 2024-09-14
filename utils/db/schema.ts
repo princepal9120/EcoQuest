@@ -48,3 +48,12 @@ export const Notifications=pgTable('notifications',{
     isRead: boolean('is_read').notNull().default(false),
     createdAt: timestamp('created_at').defaultNow().notNull()
 })
+
+export const Transactions=pgTable('transactions',{
+     id: serial('id').primaryKey(),
+     userId: integer('user_id').references(()=>Users.id).notNull(),
+     type: varchar('type',{length:20}).notNull(),
+     amount: integer('amount').notNull(),
+     description: text('descrption').notNull(),
+     date: timestamp('date').defaultNow().notNull(),
+})
