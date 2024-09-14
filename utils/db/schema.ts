@@ -1,4 +1,5 @@
-import {integer, varchar, pgTable, serial, text, timestamp,jsonb, boolean} from "drizzle-orm/pg-core"
+import { timeStamp } from "console"
+import {integer, varchar, pgTable, serial, text, timestamp,jsonb, boolean, PgJsonbBuilder} from "drizzle-orm/pg-core"
 
 
 export const Users=pgTable('users',{
@@ -16,6 +17,19 @@ export const Reports=pgTable('reports',{
     amount: varchar("amount",{length:255}).notNull(),
     imageUrl: text('image_url'),
     verificationResult: jsonb('verification_result'),
-    cretedAt: timestamp('created_at').defaultNow().notNull()
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+   
+
+})
+export const Rewards=pgTable('rewards',{
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(()=>Users.id).notNull(),
+    points:integer('points').notNull().default(0),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    isAvailable: boolean('is_available').notNull().default(true),
+    description: text('description'),
+    collectionInfo: jsonb('collection_info').notNull()
+
 
 })
