@@ -1,4 +1,4 @@
-import { timeStamp } from "console"
+
 import {integer, varchar, pgTable, serial, text, timestamp,jsonb, boolean, PgJsonbBuilder} from "drizzle-orm/pg-core"
 
 
@@ -32,4 +32,11 @@ export const Rewards=pgTable('rewards',{
     collectionInfo: jsonb('collection_info').notNull()
 
 
+})
+export const CollectedWaste= pgTable('collected_waste',{
+    id: serial('id').primaryKey(),
+    reportId: integer('report_id').references(()=>Reports.id).notNull(),
+    collectorId: integer('collector_id').references(()=>Users.id).notNull(),
+    collectionDate: timestamp('collection_date').notNull(),
+    status: varchar('status', {length: 255}).notNull().default('pending'),
 })
