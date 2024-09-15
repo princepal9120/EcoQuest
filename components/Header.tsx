@@ -11,11 +11,12 @@ import createUser, {
   markNotificationAsRead,
 } from "@/utils/db/actions";
 import { Button } from "./ui/button";
-import { Menu } from "lucide-react";
+import { Leaf, Menu, Sprout, Trees } from "lucide-react";
+import Link from "next/link";
 
 //reward section using web3 blockchain technology
 //give user reward using crypto coin
-const clientId = process.env.WEB3_AUTH_CLIENT_ID!;
+const clientId = process.env.NEXT_PUBLIC_WEB3_AUTH_CLIENT_ID!;
 
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
@@ -28,7 +29,7 @@ const chainConfig = {
   logo: "https://assets.web3auth.io/evm-chains/sepolia.png",
 };
 const privateKeyProvider = new EthereumPrivateKeyProvider({
-  config: chainConfig,
+  config: { chainConfig },
 });
 
 const web3auth = new Web3Auth({
@@ -177,18 +178,28 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div
-        className="flex items-center justify-center px-4
- py-2"
+        className="flex items-center justify-between px-4 py-2"
       >
         <div className="flex items-center">
           <Button
             variant="ghost"
+            size='icon'
             className="mr-2 md:mr-4"
             onClick={onMenuClick}
           >
+          
             <Menu className=" h-6 w-6" />
           </Button>
+        
+          <Link href="/" className="flex items-center">
+            <Trees className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
+            <div className="flex flex-col">
+              <span className="font-bold text-base md:text-lg text-gray-800 uppercase">Eco<span className="text-green-500">Quest</span></span>
+              <span className="text-[8px] md:text-[10px] text-gray-500 -mt-1">ETHOnline24</span>
+            </div>
+          </Link>
         </div>
+        
       </div>
     </header>
   );
