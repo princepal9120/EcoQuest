@@ -50,12 +50,15 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
           setUserInfo(user);
           if (user.email) {
             localStorage.setItem("userEmail", user.email);
-            await createUser;
+            await createUser(user.email, user.name || "Anonymous User");
           }
         }
       } catch (error) {
-        console.log("error", error);
+        console.error("Error Initializing web3auth", error);
+      } finally {
+        setLoading(false);
       }
     };
-  });
+    init();
+  }, []);
 }
