@@ -11,8 +11,10 @@ import createUser, {
   markNotificationAsRead,
 } from "@/utils/db/actions";
 import { Button } from "./ui/button";
-import { Leaf, Menu, Sprout, Trees } from "lucide-react";
+import { Menu, Search, Trees } from "lucide-react";
 import Link from "next/link";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { Input } from "./ui/input";
 
 //reward section using web3 blockchain technology
 //give user reward using crypto coin
@@ -50,6 +52,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   const pathname = usePathname();
   const [notification, setNotification] = useState<Notification[]>([]);
   const [balance, setBalance] = useState(0);
+  const isMobile = useMediaQuery("(max-width: 768px)");
   useEffect(() => {
     const init = async () => {
       try {
@@ -177,29 +180,42 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   }
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div
-        className="flex items-center justify-between px-4 py-2"
-      >
+      <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center">
           <Button
             variant="ghost"
-            size='icon'
+            size="icon"
             className="mr-2 md:mr-4"
             onClick={onMenuClick}
           >
-          
             <Menu className=" h-6 w-6" />
           </Button>
-        
+
           <Link href="/" className="flex items-center">
             <Trees className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
             <div className="flex flex-col">
-              <span className="font-bold text-base md:text-lg text-gray-800 uppercase">Eco<span className="text-green-500">Quest</span></span>
-              <span className="text-[8px] md:text-[10px] text-gray-500 -mt-1">ETHOnline24</span>
+              <span className="font-bold text-base md:text-lg text-gray-800 uppercase">
+                Eco<span className="text-green-500">Quest</span>
+              </span>
+              <span className="text-[8px] md:text-[10px] text-gray-500 -mt-1">
+                ETHOnline24
+              </span>
             </div>
           </Link>
         </div>
-        
+        {!isMobile && (
+          <div className="flex-1 max-w-xl mx-4">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="search...."
+                className="w-full px-4 py-2  rounded-full
+                focus:outline-none focus:ring-2 focus:ring-green-900"
+              />
+              <Search className="absolute right-3 top-1 text-gray-400" />
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
