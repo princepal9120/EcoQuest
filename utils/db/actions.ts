@@ -82,3 +82,16 @@ export async function getRewardTransactions(userId: number) {
     return null;
   }
 }
+// mark notification functions
+
+export async function markNotificationAsRead(notificationId: number) {
+  try {
+    await db
+      .update(Notifications)
+      .set({ isRead: true })
+      .where(eq(Notifications.id, notificationId))
+      .execute();
+  } catch (error) {
+    console.error("Error while Notification as REad", error);
+  }
+}
