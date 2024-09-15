@@ -4,8 +4,9 @@ import { Web3Auth } from "@web3auth/modal";
 import { CHAIN_NAMESPACES, IProvider, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { usePathname } from "next/navigation";
+import createUser, { getUnreadNotifications, getByUserEmail } from "@/utils/db/actions";
 
-const clientId = process.env.WEB3_AUTH_CLIENT_ID;
+const clientId = process.env.WEB3_AUTH_CLIENT_ID!;
 
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
@@ -22,7 +23,7 @@ const privateKeyProvider = new EthereumPrivateKeyProvider({
 });
 
 const web3auth = new Web3Auth({
-  clientId,
+    clientId,
   web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET,
   privateKeyProvider,
 });
@@ -50,15 +51,47 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
           setUserInfo(user);
           if (user.email) {
             localStorage.setItem("userEmail", user.email);
-            await createUser(user.email, user.name || "Anonymous User");
+            await createUser(user.email,user.name || "Anonymous User");
           }
         }
       } catch (error) {
         console.error("Error Initializing web3auth", error);
-      } finally {
-        setLoading(false);
+      }finally{
+        setLoading(false)
       }
-    };
-    init();
-  }, []);
+    }
+    init()
+  },[]);
+
+  useEffect(()=>{
+        const fetchNotifications =async ()=>{
+            if(userInfo && userInfo.email){
+                const user=await getByUserEmail(userInfo.email)
+                if(user){
+                    const unreadNotifications=await  getUnreadNotifications(user.id)
+                    setNotification(unreadNotifications);
+
+                }
+
+            }
+        }
+        fetchNotifications();
+        const notificationInterval=setInterval(fetchNotifications,30000)
+        return ()=> clearInterval(notificationInterval)
+  },[userInfo])
+
+  useEffect(() => {
+    const fetchUserBalance= async ()=>{
+        if(userInfo && userInfo.email){
+            const user=await getByUserEmail(userInfo.email);
+            if(user){
+                const userBalance= await 
+            }
+        }
+    }
+  
+ 
+  }, [third])
+  
 }
+
