@@ -17,5 +17,5 @@ const [matches, setMatches] = useState(false)
         media.removeListener(listener)
       }
     }, [matches,query])
-    return matches;
+    return matches;    
 }
