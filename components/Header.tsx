@@ -11,14 +11,14 @@ import createUser, {
   markNotificationAsRead,
 } from "@/utils/db/actions";
 import { Button } from "./ui/button";
-import { Bell, Menu, Search, Trees } from "lucide-react";
+import { Bell, Coins, Menu, Search, Trees,LogIn,LogOut, User, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Input } from "./ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuRadioItem,
+ 
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
@@ -32,14 +32,15 @@ const clientId = process.env.NEXT_PUBLIC_WEB3_AUTH_CLIENT_ID!;
 
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
-  chainId: "0xa36a7",
+  chainId: "0xaa36a7",
   rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-  displayName: "Sepolia Testnet",
-  blockExploreUrl: "https://sepolia.etherscan.io",
+  displayName: "Ethereum Sepolia Testnet",
+  blockExplorerUrl: "https://sepolia.etherscan.io",
   ticker: "ETH",
   tickerName: "Ethereum",
-  logo: "https://assets.web3auth.io/evm-chains/sepolia.png",
+  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
 };
+
 const privateKeyProvider = new EthereumPrivateKeyProvider({
   config: { chainConfig },
 });
@@ -66,24 +67,33 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   useEffect(() => {
     const init = async () => {
       try {
+        await web3auth.initModal();
         setProvider(web3auth.provider);
+
         if (web3auth.connected) {
           setLoggedIn(true);
           const user = await web3auth.getUserInfo();
           setUserInfo(user);
           if (user.email) {
-            localStorage.setItem("userEmail", user.email);
-            await createUser(user.email, user.name || "Anonymous User");
+            localStorage.setItem('userEmail', user.email);
+            try {
+              await createUser(user.email, user.name || 'Anonymous User');
+            } catch (error) {
+              console.error("Error creating user:", error);
+              // Handle the error appropriately, maybe show a message to the user
+            }
           }
         }
       } catch (error) {
-        console.error("Error Initializing web3auth", error);
+        console.error("Error initializing Web3Auth:", error);
       } finally {
         setLoading(false);
       }
     };
+
     init();
   }, []);
+
   // reward notification  function
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -127,10 +137,10 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
     };
   }, [userInfo]);
 
-  // login fucntion
+  // login function
   const login = async () => {
     if (!web3auth) {
-      console.error("Web3Auth not initialized");
+      console.error("Web3Auth not initialized yet");
       return;
     }
     try {
@@ -263,6 +273,58 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+          <div className="mr-2 md:mr-4  flex items-center bg-gray-100 rounded-full  px-2 md:px-3 py-1">
+            <Coins className="h-4 w-4 md:h-5 md:w-5 mr-1 text-green-500">
+              <span className=" font-semibold text-sm md:text-base text-gray-800">
+                {balance.toFixed(2)}
+              </span>
+            </Coins>
+          </div>
+          {!loggedIn ? (
+            <Button
+              onClick={login}
+              className="bg-green-600 hover:bg-green-800 text-white text-sm 
+md:text-base"
+            >
+            Login
+          <LogIn className="ml-1 md:ml-2 h-4 w-4 md:h-5 md:w-5"/>
+            </Button>
+          ) : (
+            <>
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant="ghost" size="icon" className="items-center flex" >
+            <User className="h-5 w-5 mr-1"/>
+            <ChevronDown className="h-4 w-4"/>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={userInfo}>
+                  {
+                    userInfo?userInfo.name :"Profile"
+                  }
+
+                </DropdownMenuItem>
+                <DropdownMenuItem >
+                 <Link href="/settings">Settings</Link>
+
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+
+       
+              
+              Logout
+  
+
+                </DropdownMenuItem>
+           
+               
+
+
+              </DropdownMenuContent>
+            </DropdownMenu>
+            </>
+          )}
         </div>
       </div>
     </header>
