@@ -3,7 +3,24 @@
 // animate debouncing logo
 
 import { Button } from "@/components/ui/button";
-import { Trees } from "lucide-react";
+import { Coins, HeartHandshake, PenOff, Trees } from "lucide-react";
+function FeatureCard({icon:Icon, title, description}:{icon: React.ElementType; title:string; description:string}){
+return (
+<div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-all duration-300
+ease-in-out flex flex-col items-center text-center
+">
+<div className="flex bg-green-100 p-4 rounded-full mb-6">
+  <Icon className="text-green-600 h-8 w-8"/>
+
+
+</div>
+<h1 className="text-gray-800 text-xl font-semibold mb-4 ">{title}</h1>
+<p className="text-gray-600 leading-relaxed">{description}</p>
+</div>
+
+
+)
+}
 
 function AnimatedGlobe() {
   return (
@@ -28,9 +45,12 @@ export default function Home() {
 <p className="text-gray-600 text-xl mx-auto leading-relaxed ">  Join our community in making waste management more efficient and rewarding!</p>
      <Button className=" bg-green-600 hover:bg-green-700 text-white font-semibold text-lg py-6 px-10 rounded-full">Report Waste</Button> 
       </section>
-      <section>
-        
-      </section>
+      <section className="grid md:grid-cols-3 gap-10 mb-20">
+  <FeatureCard icon={Trees} title="Eco-Friendly" description="Easily manage waste disposal, schedule pickups, and track your environmental impact for a cleaner, greener community."/>
+  <FeatureCard icon={Coins} title="Rewards" description="Earn points for responsible waste management and redeem them for rewards like discounts and badges."/>
+  <FeatureCard icon={HeartHandshake} title="Community Driven" description="Join local clean-up events, participate in challenges, and connect with others committed to sustainability."/>
+</section>
+
  
     </div>
   );
