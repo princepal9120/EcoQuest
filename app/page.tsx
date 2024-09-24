@@ -28,6 +28,9 @@ export default function Home() {
 <p className="text-gray-600 text-xl mx-auto leading-relaxed ">  Join our community in making waste management more efficient and rewarding!</p>
      <Button className=" bg-green-600 hover:bg-green-700 text-white font-semibold text-lg py-6 px-10 rounded-full">Report Waste</Button> 
       </section>
+      <section>
+        
+      </section>
  
     </div>
   );
