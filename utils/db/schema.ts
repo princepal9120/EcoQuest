@@ -16,7 +16,9 @@ export const Reports=pgTable('reports',{
     amount: varchar("amount",{length:255}).notNull(),
     imageUrl: text('image_url'),
     verificationResult: jsonb('verification_result'),
+    status: varchar("status",{length:255}).notNull().default("pending"),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    collectorId: integer("collector_id").references(() => Users.id),
    
 
 })
@@ -27,6 +29,7 @@ export const Rewards=pgTable('rewards',{
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     isAvailable: boolean('is_available').notNull().default(true),
+    name: varchar("name", {length: 255}).notNull()
     description: text('description'),
     collectionInfo: jsonb('collection_info').notNull()
 

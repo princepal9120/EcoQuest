@@ -102,6 +102,7 @@ export async function createReport(
   wasteType: string,
   amount: string,
   imageUrl?: string,
+  status?: string,
   verificationResult?: any
 ) {
   try {
@@ -118,26 +119,90 @@ export async function createReport(
       })
       .returning()
       .execute();
-      cosnt pointEarned=10;
-      // update reward Points
-      //create Transaction
-      //create Notification
+    const pointEarned = 10;
+    // update reward Points
+    await updateRewardPoints(userId, pointEarned);
+    //create Transaction
+    await createTransaction(
+      userId,
+      "earned_report",
+      pointEarned,
+      "Points earned for reporting"
+    );
+    //create Notification
+    await createNotification(
+      userId,
+      `You've earned ${pointEarned} points for reporting waste!`,
+      "reward"
+    );
+    return report;
   } catch (error) {
-
+    console.error("Error while creating a Report", error);
+    throw error;
+    
   }
-}I
-export async function updateRewardPoints(userId:number, pointsToAdd : number)   {
-   try {
-    const [ updatedReward]= await db.update(Rewards).set({
-      points: sql`${Rewards.points}+${pointsToAdd}`
-    }).where(eq(Rewards.userId,userId)).returning().execute();
-    return updatedReward;
-   } catch (error) {
-    console.log("Error while adding points to reward",error)
-    return null;
-   }
 
-  
+
+};
+
+export async function updateRewardPoints(userId: number, pointsToAdd: number) {
+  try {
+    const [updatedReward] = await db
+      .update(Rewards)
+      .set({
+        points: sql`${Rewards.points}+${pointsToAdd}`,
+      })
+      .where(eq(Rewards.userId, userId))
+      .returning()
+      .execute();
+    return updatedReward;
+  } catch (error) {
+    console.log("Error while adding points to reward", error);
+    return null;
+  }
 }
 
+export async function createTransaction(
+  userId: number,
+  type: "earned_report" | "earned_collect" | "redeemed",
+  amount: number,
+  description: string
+) {
+  try {
+    const [transaction] = await db
+      .insert(Transactions)
+      .values({
+        userId,
+        type,
+        amount,
+        description,
+      })
+      .returning()
+      .execute();
+    return transaction;
+  } catch (error) {
+    console.log("Error while creating transaction", error);
+    throw error;
+  }
+}
 
+export async function createNotification(
+  userId: number,
+  message: string,
+  type: string
+) {
+  try {
+    const [notification] = await db
+      .insert(Notifications)
+      .values({
+        userId,
+        message,
+        type,
+      })
+      .returning()
+      .execute();
+    return notification;
+  } catch (error) {
+    console.error("Error while creating notifications", error);
+  }
+}
