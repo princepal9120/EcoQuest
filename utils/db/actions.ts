@@ -1,6 +1,6 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "./dbConfig";
-import { Notifications, Reports, Transactions, Users } from "./schema";
+import { Notifications, Reports, Rewards, Transactions, Users } from "./schema";
 import { date } from "drizzle-orm/mysql-core";
 
 export default async function createUser(email: string, name: string) {
@@ -117,10 +117,27 @@ export async function createReport(
         status: "pending",
       })
       .returning()
+      .execute();
       cosnt pointEarned=10;
       // update reward Points
       //create Transaction
       //create Notification
-      .execute();
-  } catch (error) {}
+  } catch (error) {
+
+  }
+}I
+export async function updateRewardPoints(userId:number, pointsToAdd : number)   {
+   try {
+    const [ updatedReward]= await db.update(Rewards).set({
+      points: sql`${Rewards.points}+${pointsToAdd}`
+    }).where(eq(Rewards.userId,userId)).returning().execute();
+    return updatedReward;
+   } catch (error) {
+    console.log("Error while adding points to reward",error)
+    return null;
+   }
+
+  
 }
+
+
