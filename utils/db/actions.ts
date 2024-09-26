@@ -70,7 +70,7 @@ export async function getRewardTransactions(userId: number) {
       .orderBy(desc(Transactions.date))
       .limit(10)
       .execute();
-    //   return transactions
+    // return transactions
     const formattedTransactions = transactions.map((t) => ({
       ...t,
       date: t.date.toISOString().split("T")[0], //YYYY-MM-DD
@@ -102,7 +102,7 @@ export async function createReport(
   wasteType: string,
   amount: string,
   imageUrl?: string,
-  status?: string,
+
   verificationResult?: any
 ) {
   try {
@@ -139,11 +139,8 @@ export async function createReport(
   } catch (error) {
     console.error("Error while creating a Report", error);
     throw error;
-    
   }
-
-
-};
+}
 
 export async function updateRewardPoints(userId: number, pointsToAdd: number) {
   try {
@@ -204,5 +201,20 @@ export async function createNotification(
     return notification;
   } catch (error) {
     console.error("Error while creating notifications", error);
+  }
+}
+
+export async function getRecentReports(limit: number = 10) {
+  try {
+    const [reports] = await db
+      .select()
+      .from(Reports)
+      .orderBy(desc(Reports.createdAt))
+      .limit(limit)
+      .execute();
+
+    
+  } catch (error) {
+    console.error("Error while fetching recent reports", error)
   }
 }

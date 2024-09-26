@@ -1,16 +1,17 @@
 "use client";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import { Libraries, useJsApiLoader } from "@react-google-maps/api";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import toast from "react-hot-toast";
+import { createReport, getByUserEmail, getRecentReports } from "@/utils/db/actions";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY!;
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
 const libraries: Libraries = ["places"];
 
 export default function ReportPage() {
-  const [user, setUser] = useState("");
+  const [user, setUser] = useState("") as any;
   const router = userRouter();
   const [reports, setReports] = useState<
     Array<{
@@ -49,7 +50,7 @@ export default function ReportPage() {
   });
   const onLoad = useCallback((ref: google.maps.places.SearchBox) => {
     setSearchBox(ref);
-    }, []);
+  }, []);
   const onPlacedChanged = () => {
     if (searchBox) {
       const places = searchBox.getPlaces();
@@ -126,8 +127,8 @@ export default function ReportPage() {
 
       const result = await model.generateContent([prompt, ...imageParts]);
       const response = await result.response;
-      console.log("Print the generate data of image",response);
-      
+      console.log("Print the generate data of image", response);
+
       const text = response.text();
 
       try {
@@ -158,20 +159,66 @@ export default function ReportPage() {
     }
   };
 
-const handleSubmit= async (e:React.FormEvent) => {
-  e.preventDefault();
-  if(verificationStatus!=='success' || !user){
-    toast.error("Please verify the waste before submitting or login")
-    return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (verificationStatus !== "success" || !user) {
+      toast.error("Please verify the waste before submitting or login");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const report = await createReport(
+        user.id,
+        newReport.location,
+        newReport.type,
+        newReport.amount,
+        preview || undefined,
+        verificationResult? JSON.stringify(verificationResult):undefined,    
+ 
+      );
+      const formattedReport={
+id: report.id,
+location: report.location,
+wasteType: report.wasteType,
+amount: report.amount,
+createdAt: report.createdAt.toISOString().split("T")[0];
+
+      }
+      setReports([formattedReport,...reports])
+      setNewReport({ location: "", type:" ", amount:" "})
+      setFile(null)
+setPreview(null)
+      setVerificationResult(null)
+        setVerificationStatus('idle')
+      toast.success(`Report submitted success fully! You've earned points for reward`)
+    } catch (error) 
+    { 
+      console.error("Error while submitting report",error)
+      toast.error("Failed to submit report. Please Try again!")
+    }finally{
+      setIsSubmitting(false)
+    }
+  };
+useEffect(()=>{
+ const checkUser=async ()=>{
+  const email=localStorage.getItem('userEmail');
+  if (email)  {
+    let user= await getByUserEmail(email)
+    setUser(user);
+    const recentReports=(await getRecentReports()) as any;
+    const formattedReports= recentReports?.map((report: any)=>({
+    ...report,
+    createdAt: report.createdAt.toISOString().split('T')[0]
+    })
+    );
+    setReports(formattedReports);
+  }else{
+    router.push("/")
   }
-  setIsSubmitting(true);
-  try {
-    const report=await createReport()
-    
-  } catch (error) {
-    
-  }
-}
+ };
+  checkUser();
+},[router])
+
 
   return (
     <div className="container mx-auto">
