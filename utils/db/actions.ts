@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "./dbConfig";
-import { Notifications, Transactions, Users } from "./schema";
+import { Notifications, Reports, Transactions, Users } from "./schema";
 import { date } from "drizzle-orm/mysql-core";
 
 export default async function createUser(email: string, name: string) {
@@ -94,4 +94,33 @@ export async function markNotificationAsRead(notificationId: number) {
   } catch (error) {
     console.error("Error while Notification as REad", error);
   }
+}
+
+export async function createReport(
+  userId: number,
+  location: string,
+  wasteType: string,
+  amount: string,
+  imageUrl?: string,
+  verificationResult?: any
+) {
+  try {
+    const [report] = await db
+      .insert(Reports)
+      .values({
+        userId,
+        location,
+        wasteType,
+        amount,
+        imageUrl,
+        verificationResult,
+        status: "pending",
+      })
+      .returning()
+      cosnt pointEarned=10;
+      // update reward Points
+      //create Transaction
+      //create Notification
+      .execute();
+  } catch (error) {}
 }
