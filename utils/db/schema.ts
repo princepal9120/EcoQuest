@@ -1,4 +1,4 @@
-import {integer, varchar, pgTable, serial, text, timestamp,jsonb, boolean, PgJsonbBuilder} from "drizzle-orm/pg-core"
+import {integer, varchar, pgTable, serial, text, timestamp,jsonb, boolean} from "drizzle-orm/pg-core"
 
 
 export const Users=pgTable('users',{
@@ -29,7 +29,7 @@ export const Rewards=pgTable('rewards',{
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     isAvailable: boolean('is_available').notNull().default(true),
-    name: varchar("name", {length: 255}).notNull()
+    name: varchar("name", {length: 255}).notNull(),
     description: text('description'),
     collectionInfo: jsonb('collection_info').notNull()
 

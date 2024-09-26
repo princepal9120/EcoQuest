@@ -4,7 +4,15 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Libraries, useJsApiLoader } from "@react-google-maps/api";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import toast from "react-hot-toast";
-import { createReport, getByUserEmail, getRecentReports } from "@/utils/db/actions";
+import {
+  createReport,
+  getUserByEmail,
+  getRecentReports,
+} from "@/utils/db/actions";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Loader, Upload } from "lucide-react";
+import Image from "next/image";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY!;
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
@@ -12,7 +20,7 @@ const libraries: Libraries = ["places"];
 
 export default function ReportPage() {
   const [user, setUser] = useState("") as any;
-  const router = userRouter();
+  const router = useRouter();
   const [reports, setReports] = useState<
     Array<{
       id: number;
@@ -37,7 +45,7 @@ export default function ReportPage() {
   const [verificationResult, setVerificationResult] = useState<{
     wasteType: string;
     quantity: string;
-    confidence: string;
+    confidence: number;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [searchBox, setSearchBox] =
@@ -173,60 +181,128 @@ export default function ReportPage() {
         newReport.type,
         newReport.amount,
         preview || undefined,
-        verificationResult? JSON.stringify(verificationResult):undefined,    
- 
+        verificationResult ? JSON.stringify(verificationResult) : undefined
       );
-      const formattedReport={
-id: report.id,
-location: report.location,
-wasteType: report.wasteType,
-amount: report.amount,
-createdAt: report.createdAt.toISOString().split("T")[0];
-
-      }
-      setReports([formattedReport,...reports])
-      setNewReport({ location: "", type:" ", amount:" "})
-      setFile(null)
-setPreview(null)
-      setVerificationResult(null)
-        setVerificationStatus('idle')
-      toast.success(`Report submitted success fully! You've earned points for reward`)
-    } catch (error) 
-    { 
-      console.error("Error while submitting report",error)
-      toast.error("Failed to submit report. Please Try again!")
-    }finally{
-      setIsSubmitting(false)
+      const formattedReport = {
+        id: report.id,
+        location: report.location,
+        wasteType: report.wasteType,
+        amount: report.amount,
+        createdAt: report.createdAt.toISOString().split("T")[0],
+      };
+      setReports([formattedReport, ...reports]);
+      setNewReport({ location: "", type: " ", amount: " " });
+      setFile(null);
+      setPreview(null);
+      setVerificationResult(null);
+      setVerificationStatus("idle");
+      toast.success(
+        `Report submitted success fully! You've earned points for reward`
+      );
+    } catch (error) {
+      console.error("Error while submitting report", error);
+      toast.error("Failed to submit report. Please Try again!");
+    } finally {
+      setIsSubmitting(false);
     }
   };
-useEffect(()=>{
- const checkUser=async ()=>{
-  const email=localStorage.getItem('userEmail');
-  if (email)  {
-    let user= await getByUserEmail(email)
-    setUser(user);
-    const recentReports=(await getRecentReports()) as any;
-    const formattedReports= recentReports?.map((report: any)=>({
-    ...report,
-    createdAt: report.createdAt.toISOString().split('T')[0]
-    })
-    );
-    setReports(formattedReports);
-  }else{
-    router.push("/")
-  }
- };
-  checkUser();
-},[router])
-
+  useEffect(() => {
+    const checkUser = async () => {
+      const email = localStorage.getItem("userEmail");
+      if (email) {
+        let user = await getUserByEmail(email);
+        setUser(user);
+        const recentReports = (await getRecentReports()) as any;
+        const formattedReports = recentReports?.map((report: any) => ({
+          ...report,
+          createdAt: report.createdAt.toISOString().split("T")[0],
+        }));
+        setReports(formattedReports);
+      }
+    };
+    checkUser();
+  }, [router]);
 
   return (
-    <div className="container mx-auto">
-      <section>
-        <div className="flex "></div>
-      </section>
+    <div className="p-8 mx-auto max-w-4xl p-8">
+      <h1 className=" mb-6 font-semibold text-center text-3xl text-gray-800">
+        Report Waste
+      </h1>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-9 rounded-2xl max-h-screen mb-12 "
+      >
+        <div className="mb-8">
+          <label
+            htmlFor="waste-image"
+            className="block text-lg text-gray-700 mb-2"
+          >
+            Upload Waste Image
+          </label>
+          <div className="flex mt-1 justify-center px-6 pt-5 pb-5 border-2 border-green-800 border-dashed rounded-xl
+          hover:border-green-500 transition-all duration-900
+           ">
+            <div className="space-y-1 text-center" >
+              <Upload className="h-5 w-5 text-gray-500 mx-auto my-auto"/>
+            <div className="flex text-sm text-gray-600">
+              <label 
+              htmlFor="waste-image"
+              className="relative cursor-pointer bg-white rounded-md font-medium text-green-600
+              hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-50
+              "
+              >
+                <span>Upload a File </span>
+                <input id="waste-image" name="waste-image" type="file" className="sr-only"
+                onChange={handleFileChange} accept="image/*"
+                />
 
-      <section></section>
+                </label> 
+                <p className="pl-1"> or drag and drop</p>
+                </div>
+               <p className="text-xs text-green-900">PNG,JPG,GIF up to 10 MB</p>
+            </div>
+           </div>
+        </div>
+
+        {preview && (
+          <div className="mt-4 mb-8">
+            <img src={preview} alt="Waste preview" className="max-w-full h-auto rounded-xl shadow-md"/>
+     
+          </div>
+        )}
+        <Button
+        type="button"
+        onClick={handleVerify}
+        className="w-full mb-8 flex justify-center items-center bg-green-700 hover:bg-green-500 hover:text-black
+        rounded-xl transition-colors  duration-300"
+disabled={!file || verificationStatus==="verifying"}
+        >
+{
+  verificationStatus==="verifying"?(
+    <>
+    <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"/>
+    verifying.....
+      </>
+  ): "Verify Waste"
+}
+
+        </Button>
+        {verificationStatus === 'success' && verificationResult && (
+          <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-8 rounded-r-xl">
+            <div className="flex items-center">
+              <CheckCircle className="h-6 w-6 text-green-400 mr-3" />
+              <div>
+                <h3 className="text-lg font-medium text-green-800">Verification Successful</h3>
+                <div className="mt-2 text-sm text-green-700">
+                  <p>Waste Type: {verificationResult.wasteType}</p>
+                  <p>Quantity: {verificationResult.quantity}</p>
+                  <p>Confidence: {(verificationResult.confidence * 100).toFixed(2)}%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </form>
     </div>
   );
 }

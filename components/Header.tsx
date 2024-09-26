@@ -7,7 +7,7 @@ import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { usePathname } from "next/navigation";
 import createUser, {
   getUnreadNotifications,
-  getByUserEmail,
+  getUserByEmail,
   getUserBalance,
   markNotificationAsRead,
 } from "@/utils/db/actions";
@@ -108,7 +108,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   useEffect(() => {
     const fetchNotifications = async () => {
       if (userInfo && userInfo.email) {
-        const user = await getByUserEmail(userInfo.email);
+        const user = await getUserByEmail(userInfo.email);
         if (user) {
           const unreadNotifications = await getUnreadNotifications(user.id);
           setNotification(unreadNotifications);
@@ -123,7 +123,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   useEffect(() => {
     const fetchUserBalance = async () => {
       if (userInfo && userInfo.email) {
-        const user = await getByUserEmail(userInfo.email);
+        const user = await getUserByEmail(userInfo.email);
         if (user) {
           const userBalance = await getUserBalance(user.id);
           setBalance(userBalance);
