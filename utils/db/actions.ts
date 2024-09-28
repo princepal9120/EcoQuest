@@ -261,6 +261,7 @@ export async function getRecentReports(limit: number = 10) {
       .orderBy(desc(Reports.createdAt))
       .limit(limit)
       .execute();
+      return reports;
   } catch (error) {
     console.error("Error while fetching recent reports", error);
   }

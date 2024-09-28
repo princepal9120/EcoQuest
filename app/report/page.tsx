@@ -184,7 +184,7 @@ export default function ReportPage() {
         newReport.amount,
         preview || undefined,
         verificationResult ? JSON.stringify(verificationResult) : undefined
-      );
+      ) as any;
       const formattedReport = {
         id: report.id,
         location: report.location,
@@ -196,8 +196,9 @@ export default function ReportPage() {
       setNewReport({ location: "", type: " ", amount: " " });
       setFile(null);
       setPreview(null);
-      setVerificationResult(null);
       setVerificationStatus("idle");
+      setVerificationResult(null);
+    
       toast.success(
         `Report submitted success fully! You've earned points for reward`
       );
