@@ -139,8 +139,6 @@ export default function ReportPage() {
 
       const result = await model.generateContent([prompt, ...imageParts]);
       const response = await result.response;
-      console.log("Print the generate data of image", response);
-
       const text = response.text();
 
       try {
@@ -215,6 +213,9 @@ export default function ReportPage() {
       const email = localStorage.getItem("userEmail");
       if (email) {
         let user = await getUserByEmail(email);
+        if (!user) {
+          user = await createUser(email, "Anonmyous User");
+        }
         setUser(user);
         const recentReports = (await getRecentReports()) as any;
         const formattedReports = recentReports?.map((report: any) => ({
@@ -234,7 +235,7 @@ export default function ReportPage() {
       </h1>
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-9 rounded-2xl max-h-screen mb-2 "
+        className="bg-white p-9 rounded-2xl shadow-2xl mb-5 "
       >
         <div className="mb-8">
           <label
@@ -275,7 +276,7 @@ export default function ReportPage() {
         </div>
 
         {preview && (
-          <div className="mt-4 mb-8">
+          <div className="mt-4 mb-8 w-full">
             <img
               src={preview}
               alt="Waste preview"
@@ -321,7 +322,7 @@ export default function ReportPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-gray-800">
           <div>
             <label
               htmlFor="location"
@@ -399,59 +400,69 @@ export default function ReportPage() {
         </div>
 
         <Button
-        type="submit"
+          type="submit"
           className="bg-gray-800 hover:bg-gray-500 w-full text-white 
         "
-        disabled={isSubmitting}
+          disabled={isSubmitting}
         >
-{
-  isSubmitting?(
-    <>
-    <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-green-300" />
-    verifying.....
-  </>
-  ): "Submit"
-}
-
+          {isSubmitting ? (
+            <>
+              <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-green-300" />
+              verifying.....
+            </>
+          ) : (
+            "Submit"
+          )}
         </Button>
       </form>
-  
-        <h2 className="text-center font-semibold text-3xl text-green-700 mb-">Recent Reports</h2>
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="bg-gray-400 max-h-96 overflow-y-auto">
-            <table className="w-full" > 
 
-              <thead className="bg-gray-50 sticky top-0" >
+      <h2 className="text-center font-semibold text-3xl text-gray-700 mb-6">
+        Recent Reports
+      </h2>
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-gray-400 max-h-96 overflow-y-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 sticky top-0">
               <tr>
-<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DAte</th>
-</tr>
-
-              </thead>
-            <tbody  className="divide-y divide-gray-200">
-              {
-
-                reports.map((report)=>(
-                  <tr key={report.id} className="hover:bg-gray-500 transition-colors duration-400">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                      <MapPin className="inline-block w-4 h-4 mr-2 text-green-500"/>
-                      {report.location}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{report.wasteType}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{report.amount}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{report.createdAt}</td>
-                  </tr>
-                ))
-              }
-
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Location
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  DAte
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {reports?.map((report: any) => (
+                <tr
+                  key={report.id}
+                  className="hover:bg-gray-50 transition-colors duration-200"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <MapPin className="inline-block w-4 h-4 mr-2 text-green-500" />
+                    {report.location}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.wasteType}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.amount}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.createdAt}
+                  </td>
+                </tr>
+              ))}
             </tbody>
-            
-            </table>
-          </div>
-
+          </table>
         </div>
       </div>
-
+    </div>
   );
 }

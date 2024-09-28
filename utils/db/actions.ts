@@ -90,7 +90,7 @@ export async function getAvailableRewards(userId: number) {
 
     // Get user's total points
     const userTransactions = await getRewardTransactions(userId);
-    const userPoints = userTransactions.reduce((total, transaction) => {
+    const userPoints = userTransactions?.reduce((total, transaction) => {
       return transaction.type.startsWith("earned")
         ? total + transaction.amount
         : total - transaction.amount;
