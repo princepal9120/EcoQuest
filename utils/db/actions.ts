@@ -266,3 +266,27 @@ export async function getRecentReports(limit: number = 10) {
     console.error("Error while fetching recent reports", error);
   }
 }
+
+export async function getWasteCollectionTask(limit:number=20) {
+  try {
+    const tasks= await db.select({
+      id: Reports.id,
+      location: Reports.location,
+      wasteType: Reports.wasteType,
+      amount: Reports.amount,
+      status: Reports.status,
+      date: Reports.createdAt,
+      collectorId:Reports.collectorId,
+
+    }).from(Reports).limit(limit).execute();
+
+    return tasks.map((task: any)=>{
+      date: task.date.toISOString.split("T")[0]
+    });
+
+  } catch (error) {
+    console.error("error while fecthcing collection waste",error);
+    return [];
+    
+  }
+}
