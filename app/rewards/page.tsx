@@ -28,44 +28,44 @@ function RewardPage() {
     const [balance, setBalance] = useState(0)
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [rewards, setRewards] = useState<Reward[]>([])
-    // const [loading, setLoading] = useState(false)
-    // useEffect(() => {
-    //   const fetchUserDataAndRewards =async () => {
-    //     setLoading(true)
-    //     try {
-    //         const userEmail =localStorage.getItem('userEmail')
-    //         if(userEmail){
-    //             const fetchUser= await getUserByEmail(userEmail)
-    //             if(fetchUser){
-    //                 setUser(fetchUser)
-    //                 const fetchedTransactions= await getRewardTransactions(fetchUser.id)
-    //                 setTransactions(fetchedTransactions as Transaction[])
-    //                 const fetchedRewards= await getAvailableRewards(fetchUser.id)
-    //                 setRewards(fetchedRewards.filter( (r) => r.cost >0));
-    //                 const calculatedBalance: number |null= fetchedTransactions?.reduce((acc, transaction)=>{
-    //                     return transaction.type.startsWith('earned')? acc+transaction.amount : acc-transaction.amount;
-    //                 },0)
-    //                 setBalance(Math.max(calculatedBalance,0));
-    //             }else{
-    //                 toast.error("User not found. Please login !😥")
-    //             }
-    //         }else{
-    //             toast.error("User not LoggedIn. Please login!")
-    //         }
+    const [loading, setLoading] = useState(false)
+    useEffect(() => {
+      const fetchUserDataAndRewards =async () => {
+        setLoading(true)
+        try {
+            const userEmail =localStorage.getItem('userEmail')
+            if(userEmail){
+                const fetchUser= await getUserByEmail(userEmail)
+                if(fetchUser){
+                    setUser(fetchUser)
+                    const fetchedTransactions= await getRewardTransactions(fetchUser.id)
+                    setTransactions(fetchedTransactions as Transaction[])
+                    const fetchedRewards= await getAvailableRewards(fetchUser.id)
+                    setRewards(fetchedRewards.filter( (r) => r.cost >0));
+                    const calculatedBalance: number |null= fetchedTransactions?.reduce((acc, transaction)=>{
+                        return transaction.type.startsWith('earned')? acc+transaction.amount : acc-transaction.amount;
+                    },0)
+                    setBalance(Math.max(calculatedBalance,0));
+                }else{
+                    toast.error("User not found. Please login !😥")
+                }
+            }else{
+                toast.error("User not LoggedIn. Please login!")
+            }
 
-    //     } catch (e) {
-    //         console.error("Error while fetching user data and rewards", e);
-    //         toast.error("Failed to load rewards data. Please Try again.!")
+        } catch (e) {
+            console.error("Error while fetching user data and rewards", e);
+            toast.error("Failed to load rewards data. Please Try again.!")
             
-    //     }finally{
-    //         setLoading(false)
+        }finally{
+            setLoading(false)
     
-    //       }
+          }
         
-    //   }
-    //   fetchUserDataAndRewards();
+      }
+      fetchUserDataAndRewards();
       
-    // }, []);
+    }, []);
 
     // const handleRedeemReward =async (rewardId:number) => {
     //     if(!user){
