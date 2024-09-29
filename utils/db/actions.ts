@@ -1,6 +1,13 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "./dbConfig";
-import { CollectedWastes, Notifications, Reports, Rewards, Transactions, Users } from "./schema";
+import {
+  CollectedWastes,
+  Notifications,
+  Reports,
+  Rewards,
+  Transactions,
+  Users,
+} from "./schema";
 import { date } from "drizzle-orm/mysql-core";
 
 export default async function createUser(email: string, name: string) {
@@ -336,24 +343,29 @@ export async function saveReward(userId: number, amount: number) {
     );
     return reward;
   } catch (e) {
-    console.error("Error while Saving Reward",e);
+    console.error("Error while Saving Reward", e);
     throw e;
-    
   }
 }
 
-export async function saveCollectedWaste(reportId: number,collectorId:number,verificationResult:any ) {
-
+export async function saveCollectedWaste(
+  reportId: number,
+  collectorId: number,
+  verificationResult: any
+) {
   try {
-    const [collectedWaste] = await db.insert(CollectedWastes).values({
-      reportId,
-      collectorId,
-      collectionDate: new Date(),
-    status: 'verified',
-    }).returning.execute();
+    const [collectedWaste] = await db
+      .insert(CollectedWastes)
+      .values({
+        reportId,
+        collectorId,
+        collectionDate: new Date(),
+        status: "verified",
+      })
+      .returning.execute();
     return collectedWaste;
   } catch (e) {
-    console.error("Error while saving collected Waste",e);
+    console.error("Error while saving collected Waste", e);
     throw e;
   }
 }

@@ -28,7 +28,7 @@ export default function CollectPage() {
   const [tasks, setTasks] = useState<CollectionTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredWasteType, setHoveredWasteType] = useState<string | null>(null);
-  const [searchItem, setSearchItem] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
   const [verificationImage, setVerificationImage] = useState<string | null>(
@@ -149,8 +149,8 @@ export default function CollectPage() {
 
       try {
         const parsedResult = JSON.parse(text);
-        console.log("parsedREsult" , parsedResult);
-        
+        console.log("parsedREsult", parsedResult);
+
         setVerificationResult({
           wasteTypeMatch: parsedResult.wasteTypeMatch,
           quantityMatch: parsedResult.quantityMatch,
@@ -200,6 +200,15 @@ export default function CollectPage() {
       setVerificationStatus("failure");
     }
   };
+   const filteredTask =tasks.filter((task )=> 
+  task.location.toLowerCase().includes(searchTerm.toLowerCase()));
+   const pageCount= Math.ceil(filteredTask.length/ITEM_PER_PAGE);
+   const paginatedTasks =filteredTasks.slice(
+    (currentPage-1)* ITEM_PER_PAGE,
+    currentPage* ITEM_PER_PAGE
+   )
+
+
 
   return (
     <div>
