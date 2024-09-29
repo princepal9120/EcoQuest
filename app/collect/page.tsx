@@ -1,6 +1,7 @@
 import {
   getUserByEmail,
   getWasteCollectionTask,
+  saveCollectedWaste,
   saveReward,
   updateTaskStatus,
 } from "@/utils/db/actions";
