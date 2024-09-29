@@ -1,4 +1,4 @@
-import { getUserByEmail, getWasteCollectionTask } from "@/utils/db/actions";
+import { getUserByEmail, getWasteCollectionTask ,updateTaskStatus} from "@/utils/db/actions";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 interface CollectionTask {
@@ -9,7 +9,7 @@ interface CollectionTask {
   status: "pending" | "in_progress" | " completed" | "verified";
   data: string;
   collectorId: number | null;
-}
+};
 const ITEM_PER_PAGE = 5;
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY!;
 export default function CollectPage() {
@@ -23,6 +23,19 @@ export default function CollectPage() {
   const [hoveredWasteType, setHoveredWasteType] = useState<string | null>(null);
   const [searchItem, setSearchItem] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
+  const [verificationImage, setVerificationImage] = useState<string | null>(
+    null
+  );
+  const [verificationStatus, setVerificationStatus] = useState<
+    "idle" | "verifying" | "success" | "failure"
+  >("idle");
+  const [verificationResult, setVerificationResult] = useState<{
+    wasteTypeMatch: boolean;
+    quantityMatch: boolean;
+    confidence: number;
+  } | null>(null);
+  const [reward, setReward] = useState<number | null>(null);
   useEffect(() => {
     const fetchUserAndTask = async () => {
       try {
@@ -50,19 +63,32 @@ export default function CollectPage() {
     fetchUserAndTask();
   }, []);
 
-  const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
-  const [verificationImage, setVerificationImage] = useState<string | nll>(
-    null
-  );
-  const [verificationStatus, setVerificationStatus] = useState<
-    "idle" | "verifying" | "success" | "failure"
-  >("idle");
-  const [verificationResult, setVerificationResult] = useState<{
-    wasteTypeMatch: boolean;
-    quantityMatch: boolean;
-    confidence: number;
-  } | null>(null);
-  const [reward, setReward] = useState<number | null>(null);
+  const handleStatusChange= async (taskId: number, newStatus: CollectionTask['status'] )=>{
+    if(!user){
+      toast.error("Please login To Collect Waste!")
+      return;
+
+    }
+    try {
+      const updatedTask =await updateTaskStatus(taskId, newStatus , user.id);
+      if(updatedTask){
+        setTasks(
+          tasks.map((task: any)=> 
+          task.id ===taskId
+        ?({...task, status: newStatus, collectorId: user.id}): task
+        ))
+      
+      toast.success("task status updated successfully")
+      }
+      else{
+        toast.error("Failed to update task status. Please try Again!😒")
+      }
+    } catch (e) {
+      
+    }
+  }
+
+
 
   return (
     <div>

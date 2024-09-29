@@ -261,32 +261,56 @@ export async function getRecentReports(limit: number = 10) {
       .orderBy(desc(Reports.createdAt))
       .limit(limit)
       .execute();
-      return reports;
+    return reports;
   } catch (error) {
     console.error("Error while fetching recent reports", error);
   }
 }
 
-export async function getWasteCollectionTask(limit:number=20) {
+export async function getWasteCollectionTask(limit: number = 20) {
   try {
-    const tasks= await db.select({
-      id: Reports.id,
-      location: Reports.location,
-      wasteType: Reports.wasteType,
-      amount: Reports.amount,
-      status: Reports.status,
-      date: Reports.createdAt,
-      collectorId:Reports.collectorId,
+    const tasks = await db
+      .select({
+        id: Reports.id,
+        location: Reports.location,
+        wasteType: Reports.wasteType,
+        amount: Reports.amount,
+        status: Reports.status,
+        date: Reports.createdAt,
+        collectorId: Reports.collectorId,
+      })
+      .from(Reports)
+      .limit(limit)
+      .execute();
 
-    }).from(Reports).limit(limit).execute();
-
-    return tasks.map((task: any)=>{
-      date: task.date.toISOString.split("T")[0]
+    return tasks.map((task: any) => {
+      date: task.date.toISOString.split("T")[0];
     });
-
   } catch (error) {
-    console.error("error while fecthcing collection waste",error);
+    console.error("error while fecthcing collection waste", error);
     return [];
-    
+  }
+}
+
+export  async function updateTaskStatus(
+  reportId: number,
+  newStatus: string,
+  collectorId: number
+) {
+  try {
+    const updateData: any = { status: newStatus };
+    if (collectorId !== undefined) {
+      updateData.collectorId = collectorId;
+    }
+    const [updateReport] = await db
+      .update(Reports)
+      .set(updateData)
+      .where(eq(Reports.id, reportId))
+      .returning()
+      .execute();
+    return updateReport;
+  } catch (e) {
+    console.error("Error while updating Tasks", e);
+    throw e;
   }
 }
