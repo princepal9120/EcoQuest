@@ -1,6 +1,7 @@
 import {
   getUserByEmail,
   getWasteCollectionTask,
+  saveReward,
   updateTaskStatus,
 } from "@/utils/db/actions";
 import { GoogleGenerativeAI } from "@google/generative-ai";

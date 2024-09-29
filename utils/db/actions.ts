@@ -292,7 +292,7 @@ export async function getWasteCollectionTask(limit: number = 20) {
   }
 }
 
-export  async function updateTaskStatus(
+export async function updateTaskStatus(
   reportId: number,
   newStatus: string,
   collectorId: number
@@ -312,5 +312,32 @@ export  async function updateTaskStatus(
   } catch (e) {
     console.error("Error while updating Tasks", e);
     throw e;
+  }
+}
+export async function saveReward(userId: number, amount: number) {
+  try {
+    const [reward] = db
+      .insert(Rewards)
+      .values({
+        userId,
+        name: "Waste Collection Reward",
+        collectionInfo: "Points earned from waste Collection",
+        points: amount,
+        isAvailable: true,
+        level: 1,
+      })
+      .returning()
+      .execute();
+    await createTransaction(
+      userId,
+      "earned_collect",
+      amount,
+      "Points earned frome collecting waste!"
+    );
+    return reward;
+  } catch (e) {
+    console.error("Error while Saving Reward",e);
+    throw e;
+    
   }
 }
