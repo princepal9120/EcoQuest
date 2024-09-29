@@ -290,9 +290,10 @@ export async function getWasteCollectionTask(limit: number = 20) {
       .limit(limit)
       .execute();
 
-    return tasks.map((task: any) => {
-      date: task.date.toISOString.split("T")[0];
-    });
+    return tasks.map((task) => ({
+      ...task,
+      date: task.date.toISOString().split("T")[0], // Format date as YYYY-MM-DD
+    }));
   } catch (error) {
     console.error("error while fecthcing collection waste", error);
     return [];

@@ -219,10 +219,12 @@ export default function ReportPage() {
         }
         setUser(user);
         const recentReports = (await getRecentReports()) as any;
-        const formattedReports = recentReports?.map((report: any) => ({
+        const formattedReports = (Array.isArray(recentReports) ? recentReports : []).map(report => ({
           ...report,
-          createdAt: report.createdAt.toISOString().split("T")[0],
-        }));
+          createdAt: report.createdAt.toISOString().split('T')[0]
+      }));
+      
+       
         setReports(formattedReports);
       }
     };
