@@ -10,14 +10,12 @@ import {
 } from "@/utils/db/actions";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
-
   Calendar,
   CheckCircle,
   Clock,
   Loader,
   MapPin,
   Search,
-
   Trash2,
   Upload,
   Weight,
@@ -288,7 +286,6 @@ export default function CollectPage() {
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 mr-2 text-gray-500" />
 
-
                     {task.date}
                   </div>
                 </div>
@@ -451,7 +448,9 @@ export default function CollectPage() {
       {user ? (
         <p className="text-sm text-gray-600 mb-4">Logged in as: {user.name}</p>
       ) : (
-        <p className="text-sm text-red-600 mb-4">Please log in to collect waste and earn rewards.</p>
+        <p className="text-sm text-red-600 mb-4">
+          Please log in to collect waste and earn rewards.
+        </p>
       )}
     </div>
   );
