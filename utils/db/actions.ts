@@ -370,3 +370,7 @@ export async function saveCollectedWaste(
     throw e;
   }
 }
+
+export async function redeemReward (params:type) {
+  
+}

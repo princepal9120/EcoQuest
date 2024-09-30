@@ -1,16 +1,8 @@
 // animate debouncing logo
 
 import { Button } from "@/components/ui/button";
-import {
-  CandyCaneIcon,
-  Coins,
-  HeartHandshake,
-  Locate,
-  MapPin,
-  PenOff,
-  Recycle,
-  Trees,
-} from "lucide-react";
+import { Coins, HeartHandshake, MapPin, Recycle, Trees } from "lucide-react";
+import Link from "next/link";
 function FeatureCard({
   icon: Icon,
   title,
@@ -61,9 +53,9 @@ export default function Home() {
           Join our community in making waste management more efficient and
           rewarding!
         </p>
-        <Button className=" bg-green-600 hover:bg-green-700 text-white font-semibold text-lg py-6 px-10 rounded-full">
+<Link href="/report">        <Button className=" bg-green-600 hover:bg-green-700 text-white font-semibold text-lg py-6 px-10 rounded-full">
           Report Waste
-        </Button>
+        </Button></Link>
       </section>
       <section className="grid md:grid-cols-3 gap-10 mb-20">
         <FeatureCard
@@ -88,11 +80,7 @@ export default function Home() {
         </h1>
         <div className="grid grid-cols-4 gap-8">
           <ImpactCard icon={Recycle} value="350 kg" title="waste collected" />
-          <ImpactCard
-            icon={MapPin}
-            value="200+"
-            title="Report submitted"
-          />
+          <ImpactCard icon={MapPin} value="200+" title="Report submitted" />
           <ImpactCard icon={Coins} value="100" title="Tokens Earned" />
           <ImpactCard icon={Trees} value="200 kg" title="Co2 offset" />
         </div>

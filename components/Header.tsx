@@ -227,9 +227,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
               <span className="font-bold text-base md:text-lg text-gray-800 uppercase">
                 Eco<span className="text-green-500">Quest</span>
               </span>
-              <span className="text-[8px] md:text-[10px] text-gray-500 -mt-1">
-                ETHOnline24
-              </span>
+            
             </div>
           </Link>
         </div>

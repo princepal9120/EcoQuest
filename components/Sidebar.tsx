@@ -42,14 +42,14 @@ export default function Sidebar({ open }: SidebarProps) {
             </Link>
           ))}
         </div>
-        <div className="p-4 border-t border-gray-600 ">
+        <div className="p-4 border-t border-gray-400 ">
             <Link href="/settings" passHref>
             <Button
                 variant={pathname === "/settings" ? "secondary" : "ghost"}
                 className={`w-full justify-start py-3 ${
                   pathname === "/settings"
                     ? "bg-green-100 text-green-800"
-                    : " text-gray-600 border-gray-300 hover:bg-gray-100"
+                    : " text-gray-600 border border-gray-500 hover:bg-gray-100"
                 }`}
               >
     <Settings className="mr-3 h-5 w-5"/>
