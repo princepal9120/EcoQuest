@@ -19,7 +19,7 @@ import {
   Search,
   Trees,
   LogIn,
-  LogOut,
+
   User,
   ChevronDown,
 } from "lucide-react";
@@ -310,7 +310,7 @@ md:text-base"
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={userInfo}>
+                  <DropdownMenuItem onClick={getUserInfo}>
                     {userInfo ? userInfo.name : "Profile"}
                   </DropdownMenuItem>
                   <DropdownMenuItem>

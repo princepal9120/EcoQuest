@@ -146,16 +146,16 @@ export default function CollectPage() {
       ];
 
       const prompt = `You are an expert in waste management and recycling. Analyze this image and provide:
-      1. Confirm if the waste type matches: ${selectedTask.wasteType}
-      2. Estimate if the quantity matches: ${selectedTask.amount}
-      3. Your confidence level in this assessment (as a percentage)
-      
-      Respond in JSON format like this:
-      {
-        "wasteTypeMatch": true/false,
-        "quantityMatch": true/false,
-        "confidence": confidence level as a number between 0 and 1
-      }`;
+        1. Confirm if the waste type matches: ${selectedTask.wasteType}
+        2. Estimate if the quantity matches: ${selectedTask.amount}
+        3. Your confidence level in this assessment (as a percentage)
+        
+        Respond in JSON format like this:
+        {
+          "wasteTypeMatch": true/false,
+          "quantityMatch": true/false,
+          "confidence": confidence level as a number between 0 and 1
+        }`;
 
       const result = await model.generateContent([prompt, ...imageParts]);
       const response = await result.response;
@@ -163,8 +163,7 @@ export default function CollectPage() {
 
       try {
         const parsedResult = JSON.parse(text);
-        console.log("parsedREsult", parsedResult);
-
+        console.log("ParsedResult", parsedResult);
         setVerificationResult({
           wasteTypeMatch: parsedResult.wasteTypeMatch,
           quantityMatch: parsedResult.quantityMatch,
@@ -214,6 +213,7 @@ export default function CollectPage() {
       setVerificationStatus("failure");
     }
   };
+
   const filteredTask = tasks.filter((task) =>
     task.location.toLowerCase().includes(searchTerm.toLowerCase())
   );

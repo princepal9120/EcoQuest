@@ -55,7 +55,7 @@ export async function getUserBalance(userId: number): Promise<number> {
   const transactions = (await getRewardTransactions(userId)) || [];
   if (!transactions) return 0;
   const balance = transactions.reduce((acc, transaction: any) => {
-    return transaction.type.startWith("earned")
+    return transaction?.type?.startsWith("earned")
       ? acc + transaction.amount
       : acc - transaction.amount;
   }, 0);
