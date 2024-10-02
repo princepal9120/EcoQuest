@@ -38,7 +38,7 @@ export default function CollectPage() {
     id: number;
     email: string;
     name: string;
-  }>(null);
+  } | null>(null);
   const [tasks, setTasks] = useState<CollectionTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredWasteType, setHoveredWasteType] = useState<string | null>(null);
