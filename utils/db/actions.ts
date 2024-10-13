@@ -10,7 +10,7 @@ import {
 } from "./schema";
 import { date } from "drizzle-orm/mysql-core";
 
-export  async function createUser(email: string, name: string) {
+export default async function createUser(email: string, name: string) {
   try {
     const [user] = await db
       .insert(Users)
@@ -324,7 +324,7 @@ export async function updateTaskStatus(
 }
 export async function saveReward(userId: number, amount: number) {
   try {
-    const [reward] = db
+    const [reward] = await db
       .insert(Rewards)
       .values({
         userId,
@@ -340,7 +340,7 @@ export async function saveReward(userId: number, amount: number) {
       userId,
       "earned_collect",
       amount,
-      "Points earned frome collecting waste!"
+      "Points earned from collecting waste!"
     );
     return reward;
   } catch (e) {
@@ -363,7 +363,7 @@ export async function saveCollectedWaste(
         collectionDate: new Date(),
         status: "verified",
       })
-      .returning.execute();
+      .returning().execute();
     return collectedWaste;
   } catch (e) {
     console.error("Error while saving collected Waste", e);

@@ -1,23 +1,22 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import {
-  createTransaction,
-  getAvailableRewards,
-  getRewardTransactions,
-  getUserBalance,
-  getUserByEmail,
-  redeemReward,
-} from "@/utils/db/actions";
-import {
-  AlertOctagon,
-  ArrowDownRight,
-  ArrowUpRight,
   Coins,
+  ArrowUpRight,
+  ArrowDownRight,
   Gift,
+  AlertCircle,
   Loader,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import {
+  getUserByEmail,
+  getRewardTransactions,
+  getAvailableRewards,
+  redeemReward,
+  createTransaction,
+} from "@/utils/db/actions";
+import { toast } from "react-hot-toast";
 
 type Transaction = {
   id: number;
@@ -26,6 +25,7 @@ type Transaction = {
   description: string;
   date: string;
 };
+
 type Reward = {
   id: number;
   name: string;
@@ -33,114 +33,185 @@ type Reward = {
   description: string | null;
   collectionInfo: string;
 };
-function RewardPage() {
+
+export default function RewardsPage() {
   const [user, setUser] = useState<{
     id: number;
     email: string;
     name: string;
   } | null>(null);
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchUserDataAndRewards = async () => {
       setLoading(true);
       try {
         const userEmail = localStorage.getItem("userEmail");
         if (userEmail) {
-          const fetchUser = await getUserByEmail(userEmail);
-          if (fetchUser) {
-            setUser(fetchUser);
-            const fetchedTransactions = await getRewardTransactions(
-              fetchUser.id
-            );
+          const fetchedUser = await getUserByEmail(userEmail);
+          if (fetchedUser) {
+            setUser(fetchedUser);
+            const fetchedTransactions =
+              (await getRewardTransactions(fetchedUser.id)) || [];
             setTransactions(fetchedTransactions as Transaction[]);
-            const fetchedRewards = await getAvailableRewards(fetchUser.id);
-            setRewards(fetchedRewards.filter((r) => r.cost > 0));
-            const calculatedBalance: number | null =
-              fetchedTransactions?.reduce((acc, transaction) => {
+
+            const fetchedRewards =
+              (await getAvailableRewards(fetchedUser.id)) || [];
+            setRewards(
+              fetchedRewards?.filter(
+                (r): r is Reward => r.cost !== undefined && r.cost > 0
+              ) || []
+            );
+
+            const calculatedBalance = fetchedTransactions.reduce(
+              (acc, transaction) => {
+                const amount = transaction.amount || 0; // Default to 0 if undefined
                 return transaction.type.startsWith("earned")
-                  ? acc + transaction.amount
-                  : acc - transaction.amount;
-              }, 0);
-            setBalance(Math.max(calculatedBalance, 0));
+                  ? acc + amount
+                  : acc - amount;
+              },
+              0
+            );
+            setBalance(Math.max(calculatedBalance, 0)); // Ensure balance is never negative
           } else {
-            toast.error("User not found. Please login !😥");
+            toast.error("User not found. Please log in again.");
           }
         } else {
-          toast.error("User not LoggedIn. Please login!");
+          toast.error("User not logged in. Please log in.");
         }
-      } catch (e) {
-        console.error("Error while fetching user data and rewards", e);
-        toast.error("Failed to load rewards data. Please Try again.!");
+      } catch (error) {
+        console.error("Error fetching user data and rewards:", error);
+        toast.error("Failed to load rewards data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchUserDataAndRewards();
   }, []);
 
-  //   const handleRedeemReward =async (rewardId:number) => {
-  //       if(!user){
-  //           toast.error("Please log in to Redeem Rewards.")
-  //           return;
-  //       }
-  //       const reward =rewards.find( r=> r.id ===rewardId)
-  //       if(reward && balance>=reward.cost && reward.cost>0){
-  //           try {
-  //               if(balance< reward.cost){
-  //                   toast.error(" Insufficient Balance to Redeem This REward!")
-  //                   return;
-  //               }
-  //               //update database
-  //               await redeemReward(user.id, rewardId);
-  //           } catch (e) {
+  const handleRedeemReward = async (rewardId: number) => {
+    if (!user) {
+      toast.error("Please log in to redeem rewards.");
+      return;
+    }
 
-  //           }
+    const reward = rewards.find((r) => r.id === rewardId);
+    if (reward && balance >= reward.cost && reward.cost > 0) {
+      try {
+        if (balance < reward.cost) {
+          toast.error("Insufficient balance to redeem this reward");
+          return;
+        }
 
-  //       }
-  //   }
+        // Update database
+        await redeemReward(user.id, rewardId);
 
-  //   const handleRedeemAllPoints= async () => {
-  //     if(!user){
-  //         toast.error("Please log in to redeem Points");
-  //         return;
-  //     }
-  //     if(balance>0){
-  //         try {
-  //             // update database
-  //             await redeemReward(user.id,0)
-  //        // create a new Transaction record
-  //             await createTransaction(user.id, 'redeemed', balance, "Redeemed All Points");
-  // //
-  //             await refreshUserData();
-  //         } catch (e) {
+        // Create a new transaction record
+        await createTransaction(
+          user.id,
+          "redeemed",
+          reward.cost,
+          `Redeemed ${reward.name}`
+        );
 
-  //         }
-  //     }
-  //   }
+        // Refresh user data and rewards after redemption
+        await refreshUserData();
+
+        toast.success(`You have successfully redeemed: ${reward.name}`);
+      } catch (error) {
+        console.error("Error redeeming reward:", error);
+        toast.error("Failed to redeem reward. Please try again.");
+      }
+    } else {
+      toast.error("Insufficient balance or invalid reward cost");
+    }
+  };
+
+  const handleRedeemAllPoints = async () => {
+    if (!user) {
+      toast.error("Please log in to redeem points.");
+      return;
+    }
+
+    if (balance > 0) {
+      try {
+        // Update database
+        await redeemReward(user.id, 0);
+
+        // Create a new transaction record
+        await createTransaction(
+          user.id,
+          "redeemed",
+          balance,
+          "Redeemed all points"
+        );
+
+        // Refresh user data and rewards after redemption
+        await refreshUserData();
+
+        toast.success(`You have successfully redeemed all your points!`);
+      } catch (error) {
+        console.error("Error redeeming all points:", error);
+        toast.error("Failed to redeem all points. Please try again.");
+      }
+    } else {
+      toast.error("No points available to redeem");
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (user) {
+      const fetchedUser = await getUserByEmail(user.email);
+      if (fetchedUser) {
+        const fetchedTransactions = await getRewardTransactions(fetchedUser.id);
+        setTransactions(fetchedTransactions as Transaction[]);
+        const fetchedRewards = await getAvailableRewards(fetchedUser.id);
+        setRewards(
+          fetchedRewards?.filter(
+            (r): r is Reward => r.cost !== undefined && r.cost > 0
+          ) || []
+        );
+        // Filter out rewards with 0 points
+
+        // Recalculate balance
+        const calculatedBalance = fetchedTransactions?.reduce(
+          (acc, transaction) => {
+            return transaction.type.startsWith("earned")
+              ? acc + transaction.amount
+              : acc - transaction.amount;
+          },
+          0
+        );
+        setBalance(Math.max(calculatedBalance ?? 0, 0)); // Ensure balance is never negative and handle potential undefined value
+      }
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-65">
-        <Loader className=" animate-spin h-9 w-9 text-gray-900" />
-        loading.....
+      <div className="flex justify-center items-center h-64">
+        <Loader className="animate-spin h-8 w-8 text-gray-600" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <h1 className="text-center font-semibold text-3xl mb-6 text-gray-800">
-        Rewards
-      </h1>
-      <div className="flex flex-col justify-between bg-white p-6 shadow-lg rounded-xl border-l-4 border-green-600 h-full mb-8">
-        <h1 className="text-2xl font-xs text-gray-800 mb-2">Reward Balance</h1>
+    <div className="p-8 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-semibold mb-6 text-gray-800">Rewards</h1>
+
+      <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col justify-between h-full border-l-4 border-green-500 mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+          Reward Balance
+        </h2>
         <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center">
-            <Coins className="w-8 h-8 text-green-600 mr-2" />
+            <Coins className="w-10 h-10 mr-3 text-green-500" />
             <div>
-              <span className="text-3xl font-semibold text-green-600">
+              <span className="text-4xl font-bold text-green-500">
                 {balance}
               </span>
               <p className="text-sm text-gray-500">Available Points</p>
@@ -148,32 +219,33 @@ function RewardPage() {
           </div>
         </div>
       </div>
-      <div className="grid md:grid-cols-2  gap-8">
+
+      <div className="grid md:grid-cols-2 gap-8">
         <div>
-          <h2 className=" font-semibold text-2xl mb-6 text-gray-800">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-800">
             Recent Transactions
           </h2>
-          <div className=" bg-white shadow-lg rounded-xl overflow-hidden ">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
             {transactions.length > 0 ? (
-              transactions.map((transaction: any) => (
+              transactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-4
-            border-b border-gray-300 last:border-0"
+                  className="flex items-center justify-between p-4 border-b border-gray-200 last:border-b-0"
                 >
                   <div className="flex items-center">
                     {transaction.type === "earned_report" ? (
-                      <ArrowUpRight className="h-6 w-6 text-green-500 mr-3 " />
+                      <ArrowUpRight className="w-5 h-5 text-green-500 mr-3" />
+                    ) : transaction.type === "earned_collect" ? (
+                      <ArrowUpRight className="w-5 h-5 text-blue-500 mr-3" />
                     ) : (
-                      <ArrowDownRight className="h-6 w-6 text-red-500 mr-3" />
+                      <ArrowDownRight className="w-5 h-5 text-red-500 mr-3" />
                     )}
                     <div>
                       <p className="font-medium text-gray-800">
                         {transaction.description}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {" "}
-                        {transaction.date}{" "}
+                        {transaction.date}
                       </p>
                     </div>
                   </div>
@@ -182,7 +254,7 @@ function RewardPage() {
                       transaction.type.startsWith("earned")
                         ? "text-green-500"
                         : "text-red-500"
-                    } `}
+                    }`}
                   >
                     {transaction.type.startsWith("earned") ? "+" : "-"}
                     {transaction.amount}
@@ -196,49 +268,59 @@ function RewardPage() {
             )}
           </div>
         </div>
+
         <div>
-          <h2 className=" font-semibold text-2xl mb-6 text-gray-800">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-800">
             Available Rewards
           </h2>
           <div className="space-y-4">
             {rewards.length > 0 ? (
               rewards.map((reward) => (
-                <div key={reward.id} className="bg-white rounded-xl shadow-md p-4">
+                <div
+                  key={reward.id}
+                  className="bg-white p-4 rounded-xl shadow-md"
+                >
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className=" text-lg font-semibold text-gray-700">{reward.name}:</h3>
-                    <span className="font-semibold text-green-500 ml-1">{reward.cost}</span>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {reward.name}
+                    </h3>
+                    <span className="text-green-500 font-semibold">
+                      {reward.cost} points
+                    </span>
                   </div>
                   <p className="text-gray-600 mb-2">{reward.description}</p>
-                  <p className="text-sm text-gray-500 mb-4">{reward.collectionInfo}</p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {reward.collectionInfo}
+                  </p>
                   {reward.id === 0 ? (
                     <div className="space-y-2">
                       <Button
-                        //   onClick={handleRedeemAllPoints}
-                        className=" w-full bg-green-500 hover:bg-green-600 text-white"
+                        onClick={handleRedeemAllPoints}
+                        className="w-full bg-green-500 hover:bg-green-600 text-white"
                         disabled={balance === 0}
                       >
-                        <Gift className="w-4 h-4 mr-2"/>
+                        <Gift className="w-4 h-4 mr-2" />
                         Redeem All Points
                       </Button>
                     </div>
                   ) : (
                     <Button
-                    //   onClick={handleRedeemReward(reward.id)}
-                      className=" w-full bg-green-500 hover:bg-green-600 text-white"
+                      onClick={() => handleRedeemReward(reward.id)}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white"
                       disabled={balance < reward.cost}
                     >
-                      <Gift className="w-4 h-4 mr-2"/>
+                      <Gift className="w-4 h-4 mr-2" />
                       Redeem Reward
                     </Button>
                   )}
                 </div>
               ))
             ) : (
-              <div className="p-4 bg-blue-300 border-l-4 border-blue-950 rounded-md">
-                <div className="flex">
-                  <AlertOctagon className="h-6 w-6 text-blue-500 mr-3" />
-                  <p className="text-blue-700">
-                    No rewards available t the moment
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
+                <div className="flex items-center">
+                  <AlertCircle className="h-6 w-6 text-yellow-400 mr-3" />
+                  <p className="text-yellow-700">
+                    No rewards available at the moment.
                   </p>
                 </div>
               </div>
@@ -249,5 +331,3 @@ function RewardPage() {
     </div>
   );
 }
-
-export default RewardPage;

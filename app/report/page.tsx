@@ -8,11 +8,10 @@ import {
 } from "@react-google-maps/api";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import toast from "react-hot-toast";
-import {
+import createUser, {
   createReport,
   getUserByEmail,
   getRecentReports,
-  createUser,
 } from "@/utils/db/actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,12 @@ const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
 const libraries: Libraries = ["places"];
 
 export default function ReportPage() {
-  const [user, setUser] = useState("") as any;
+  const [user, setUser] = useState<{
+    id: number;
+    email: string;
+    name: string;
+    createdAt: Date;
+  } | null>(null);
   const router = useRouter();
   const [reports, setReports] = useState<
     Array<{
@@ -216,9 +220,10 @@ export default function ReportPage() {
       if (email) {
         let user = await getUserByEmail(email);
         if (!user) {
-          user = await createUser(email, "Anonmyous User");
+          user = await createUser(email, "Anonymous User") as { id: number; name: string; email: string; createdAt: Date; }; 
         }
         setUser(user);
+        
         const recentReports = (await getRecentReports()) as any;
         const formattedReports = (
           Array.isArray(recentReports) ? recentReports : []
