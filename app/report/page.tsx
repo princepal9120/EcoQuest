@@ -12,6 +12,7 @@ import {
   createReport,
   getUserByEmail,
   getRecentReports,
+  createUser,
 } from "@/utils/db/actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -177,14 +178,14 @@ export default function ReportPage() {
     }
     setIsSubmitting(true);
     try {
-      const report = await createReport(
+      const report = (await createReport(
         user.id,
         newReport.location,
         newReport.type,
         newReport.amount,
         preview || undefined,
         verificationResult ? JSON.stringify(verificationResult) : undefined
-      ) as any;
+      )) as any;
       const formattedReport = {
         id: report.id,
         location: report.location,
@@ -198,7 +199,7 @@ export default function ReportPage() {
       setPreview(null);
       setVerificationStatus("idle");
       setVerificationResult(null);
-    
+
       toast.success(
         `Report submitted success fully! You've earned points for reward`
       );
@@ -219,12 +220,13 @@ export default function ReportPage() {
         }
         setUser(user);
         const recentReports = (await getRecentReports()) as any;
-        const formattedReports = (Array.isArray(recentReports) ? recentReports : []).map(report => ({
+        const formattedReports = (
+          Array.isArray(recentReports) ? recentReports : []
+        ).map((report) => ({
           ...report,
-          createdAt: report.createdAt.toISOString().split('T')[0]
-      }));
-      
-       
+          createdAt: report.createdAt.toISOString().split("T")[0],
+        }));
+
         setReports(formattedReports);
       }
     };

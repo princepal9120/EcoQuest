@@ -10,7 +10,7 @@ import {
 } from "./schema";
 import { date } from "drizzle-orm/mysql-core";
 
-export default async function createUser(email: string, name: string) {
+export  async function createUser(email: string, name: string) {
   try {
     const [user] = await db
       .insert(Users)
@@ -371,6 +371,90 @@ export async function saveCollectedWaste(
   }
 }
 
-export async function redeemReward (params:type) {
-  
+export async function getAllRewards() {
+  try {
+    const rewards = await db
+      .select({
+        id: Rewards.id,
+        userId: Rewards.userId,
+        points: Rewards.points,
+        level: Rewards.level,
+        createdAt: Rewards.createdAt,
+        userName: Users.name,
+      })
+      .from(Rewards)
+      .leftJoin(Users, eq(Rewards.userId, Users.id))
+      .orderBy(desc(Rewards.points))
+      .execute();
+
+    return rewards;
+  } catch (error) {
+    console.error("Error fetching all rewards:", error);
+    return [];
+  }
+}
+export async function redeemReward(userId: number, rewardId: number) {
+  try {
+    const userReward = await getOrCreateReward(userId) as any;
+    
+    if (rewardId === 0) {
+      // Redeem all points
+      const [updatedReward] = await db.update(Rewards)
+        .set({ 
+          points: 0,
+          updatedAt: new Date(),
+        })
+        .where(eq(Rewards.userId, userId))
+        .returning()
+        .execute();
+
+      // Create a transaction for this redemption
+      await createTransaction(userId, 'redeemed', userReward.points, `Redeemed all points: ${userReward.points}`);
+
+      return updatedReward;
+    } else {
+      // Existing logic for redeeming specific rewards
+      const availableReward = await db.select().from(Rewards).where(eq(Rewards.id, rewardId)).execute();
+
+      if (!userReward || !availableReward[0] || userReward.points < availableReward[0].points) {
+        throw new Error("Insufficient points or invalid reward");
+      }
+
+      const [updatedReward] = await db.update(Rewards)
+        .set({ 
+          points: sql`${Rewards.points} - ${availableReward[0].points}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(Rewards.userId, userId))
+        .returning()
+        .execute();
+
+      // Create a transaction for this redemption
+      await createTransaction(userId, 'redeemed', availableReward[0].points, `Redeemed: ${availableReward[0].name}`);
+
+      return updatedReward;
+    }
+  } catch (error) {
+    console.error("Error redeeming reward:", error);
+    throw error;
+  }
+}
+export async function getOrCreateReward(userId: number) {
+  try {
+    let [reward] = await db.select().from(Rewards).where(eq(Rewards.userId, userId)).execute();
+    if (!reward) {
+      [reward] = await db.insert(Rewards).values({
+        userId,
+        name: 'Default Reward',
+        collectionInfo: 'Default Collection Info',
+        points: 0,
+        level: 1,
+        isAvailable: true,
+      }).returning().execute();
+    }
+    return reward;
+  } catch (error) {
+    console.error("Error getting or creating reward:", error);
+    return null;
+  }
 }
