@@ -1,10 +1,14 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
-
-import { Web3Auth } from "@web3auth/modal";
-import { CHAIN_NAMESPACES, IProvider, WEB3AUTH_NETWORK } from "@web3auth/base";
-import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  useAuth,
+  useUser,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/nextjs";
 import createUser, {
   getUnreadNotifications,
   getUserByEmail,
@@ -19,7 +23,6 @@ import {
   Search,
   Trees,
   LogIn,
-
   User,
   ChevronDown,
 } from "lucide-react";
@@ -35,179 +38,117 @@ import {
 import { Badge } from "./ui/badge";
 import { Notifications } from "@/utils/db/schema";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { SignUpButton } from "@clerk/nextjs";
 
-//reward section using web3 blockchain technology
-//give user reward using crypto coin
-const clientId = process.env.NEXT_PUBLIC_WEB3_AUTH_CLIENT_ID!;
-
-const chainConfig = {
-  chainNamespace: CHAIN_NAMESPACES.EIP155,
-  chainId: "0xaa36a7",
-  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-  displayName: "Ethereum Sepolia Testnet",
-  blockExplorerUrl: "https://sepolia.etherscan.io",
-  ticker: "ETH",
-  tickerName: "Ethereum",
-  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-};
-
-const privateKeyProvider = new EthereumPrivateKeyProvider({
-  config: { chainConfig },
-});
-
-const web3auth = new Web3Auth({
-  clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET,
-  privateKeyProvider,
-});
 interface HeaderProps {
   onMenuClick: () => void;
   totalEarnings: number;
 }
 
 export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
-  const [provider, setProvider] = useState<IProvider | null>(null);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<any>(null);
-  const pathname = usePathname();
   const [notification, setNotification] = useState<Notification[]>([]);
   const [balance, setBalance] = useState(0);
   const isMobile = useMediaQuery("(max-width: 768px)");
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await web3auth.initModal();
-        setProvider(web3auth.provider);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
 
-        if (web3auth.connected) {
-          setLoggedIn(true);
-          const user = await web3auth.getUserInfo();
-          setUserInfo(user);
-          if (user.email) {
-            localStorage.setItem("userEmail", user.email);
-            try {
-              await createUser(user.email, user.name || "Anonymous User");
-            } catch (error) {
-              console.error("Error creating user:", error);
-              // Handle the error appropriately, maybe show a message to the user
-            }
+  // Fetch user data when signed in
+  useEffect(() => {
+    const syncUserData = async () => {
+      if (isSignedIn && user) {
+        const email = user.primaryEmailAddress?.emailAddress;
+        const name = user.fullName || user.username || "Anonymous User";
+
+        if (email) {
+          localStorage.setItem("userEmail", email);
+          try {
+            await createUser(email, name);
+          } catch (error) {
+            console.error("Error creating user:", error);
           }
         }
-      } catch (error) {
-        console.error("Error initializing Web3Auth:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
-    init();
-  }, []);
+    if (isLoaded && isSignedIn) {
+      syncUserData();
+    }
+  }, [isLoaded, isSignedIn, user]);
 
-  // reward notification  function
+  // Notification function
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (userInfo && userInfo.email) {
-        const user = await getUserByEmail(userInfo.email);
-        if (user) {
-          const unreadNotifications = await getUnreadNotifications(user.id);
+      if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+        const email = user.primaryEmailAddress.emailAddress;
+        console.log("email from clerk", email);
+        const userRecord = await getUserByEmail(email);
+        if (userRecord) {
+          const unreadNotifications = await getUnreadNotifications(
+            userRecord.id
+          );
           setNotification(unreadNotifications);
         }
       }
     };
-    fetchNotifications();
-    const notificationInterval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(notificationInterval);
-  }, [userInfo]);
-  // balance show and update function
+
+    if (isLoaded && isSignedIn) {
+      fetchNotifications();
+      const notificationInterval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(notificationInterval);
+    }
+  }, [isLoaded, isSignedIn, user]);
+
+  // Balance show and update function
   useEffect(() => {
     const fetchUserBalance = async () => {
-      if (userInfo && userInfo.email) {
-        const user = await getUserByEmail(userInfo.email);
-        if (user) {
-          const userBalance = await getUserBalance(user.id);
+      if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+        const email = user.primaryEmailAddress.emailAddress;
+        const userRecord = await getUserByEmail(email);
+        if (userRecord) {
+          const userBalance = await getUserBalance(userRecord.id);
           setBalance(userBalance);
         }
       }
     };
 
-    fetchUserBalance();
-    const handleBalanceUpdate = (event: CustomEvent) => {
-      setBalance(event.detail);
-    };
-    window.addEventListener(
-      "balanceUpdate",
-      handleBalanceUpdate as EventListener
-    );
-    return () => {
-      window.removeEventListener(
+    if (isLoaded && isSignedIn) {
+      fetchUserBalance();
+      const handleBalanceUpdate = (event: CustomEvent) => {
+        setBalance(event.detail);
+      };
+      window.addEventListener(
         "balanceUpdate",
         handleBalanceUpdate as EventListener
       );
-    };
-  }, [userInfo]);
+      return () => {
+        window.removeEventListener(
+          "balanceUpdate",
+          handleBalanceUpdate as EventListener
+        );
+      };
+    }
+  }, [isLoaded, isSignedIn, user]);
 
-  // login function
-  const login = async () => {
-    if (!web3auth) {
-      console.error("Web3Auth not initialized yet");
-      return;
-    }
-    try {
-      const web3authProvider = await web3auth.connect();
-      setProvider(web3authProvider);
-      setLoggedIn(true);
-      const user = await web3auth.getUserInfo();
-      setUserInfo(user);
-      if (user.email) {
-        localStorage.setItem("userEmail", user.email);
-        try {
-          await createUser(user.email, user.name || "Anonymous user");
-        } catch (error) {
-          console.error("Error while creating user", error);
-        }
-      }
-    } catch (error) {
-      console.error("Error while logging in ", error);
-    }
-  };
-  const logout = async () => {
-    if (!web3auth) {
-      console.log("Web3Auth is not initialized");
-      return;
-    }
-    try {
-      await web3auth.logout();
-      setProvider(null);
-      setLoggedIn(false);
-      setUserInfo(null);
-      localStorage.removeItem("userEmail");
-    } catch (error) {
-      console.error("Error logging out", error);
-    }
-  };
-  // dropdown userInfo function
-  const getUserInfo = async () => {
-    if (web3auth.connected) {
-      const user = await web3auth.getUserInfo();
-      setUserInfo(user);
-      if (user.email) {
-        localStorage.setItem("userEmail", user.email);
-        try {
-          await createUser(user.email, user.name || "Anonymous User");
-        } catch (error) {
-          console.error("Error while creating user ||", error);
-        }
-      }
-    }
-  };
-  //handle notification function
+  // Handle notification click
   const handleNotificationClick = async (notificationId: number) => {
     await markNotificationAsRead(notificationId);
+    // Refresh the notifications
+    if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+      const email = user.primaryEmailAddress.emailAddress;
+      const userRecord = await getUserByEmail(email);
+      if (userRecord) {
+        const unreadNotifications = await getUnreadNotifications(userRecord.id);
+        setNotification(unreadNotifications);
+      }
+    }
   };
-  if (loading) {
-    return <div>Loading web3 auth.....</div>;
+
+  if (!isLoaded) {
+    return <div>Loading authentication...</div>;
   }
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 py-2">
@@ -218,7 +159,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
             className="mr-2 md:mr-4"
             onClick={onMenuClick}
           >
-            <Menu className=" h-6 w-6" />
+            <Menu className="h-6 w-6" />
           </Button>
 
           <Link href="/" className="flex items-center">
@@ -227,7 +168,6 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
               <span className="font-bold text-base md:text-lg text-gray-800 uppercase">
                 Eco<span className="text-green-500">Quest</span>
               </span>
-            
             </div>
           </Link>
         </div>
@@ -246,81 +186,71 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
         )}
         <div className="flex items-center">
           {isMobile && (
-            <Button variant="ghost" size="icon" className="mr-2  ">
+            <Button variant="ghost" size="icon" className="mr-2">
               <Search className="h-5 w-5" />
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2 relative">
-                <Bell className="h-5 w-5 text-gray-500" />
-                {notification.length > 0 && (
-                  <Badge className="absolute -top-1 -right-1 px-1 min-w-[1.2rem] h-5">
-                    {notification.length}
-                  </Badge>
+
+          <SignedIn>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="mr-2 relative">
+                  <Bell className="h-5 w-5 text-gray-500" />
+                  {notification.length > 0 && (
+                    <Badge className="absolute -top-1 -right-1 px-1 min-w-[1.2rem] h-5">
+                      {notification.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                {notification.length > 0 ? (
+                  notification.map((notification: any) => (
+                    <DropdownMenuItem
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification.id)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{notification.type}</span>
+                        <span className="text-sm text-gray-500">
+                          {notification.message}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem>No New Notifications</DropdownMenuItem>
                 )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              {notification.length > 0 ? (
-                notification.map((notification: any) => (
-                  <DropdownMenuItem
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification.id)}
-                  >
-                    <div className="flex  flex-col ">
-                      <span className=" font-medium">{notification.type}</span>
-                      <span className="text-sm text-gray-500">
-                        {notification.message}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <DropdownMenuItem>No New Notifications</DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div className="mr-2 md:mr-4 flex items-center bg-gray-100 rounded-full px-2 md:px-3 py-1">
-            <Coins className="h-4 w-4 md:h-5 md:w-5 mr-1 text-green-500" />
-            <span className="font-semibold text-sm md:text-base text-gray-800">
-              {balance.toFixed(2)}
-            </span>
-          </div>
-          {!loggedIn ? (
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="mr-2 md:mr-4 flex items-center bg-gray-100 rounded-full px-2 md:px-3 py-1">
+              <Coins className="h-4 w-4 md:h-5 md:w-5 mr-1 text-green-500" />
+              <span className="font-semibold text-sm md:text-base text-gray-800">
+                {balance.toFixed(2)}
+              </span>
+            </div>
+
+            <UserButton />
+          </SignedIn>
+
+          <SignedOut>
             <Button
-              onClick={login}
-              className="bg-green-600 hover:bg-green-800 text-white text-sm 
-md:text-base"
+              onClick={() => router.push("/sign-in")}
+              className="bg-green-600 hover:bg-green-800 text-white text-sm mr-2
+              md:text-base"
             >
-              Login
-              <LogIn className="ml-1 md:ml-2 h-4 w-4 md:h-5 md:w-5" />
+              <SignInButton />
             </Button>
-          ) : (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="items-center flex"
-                  >
-                    <User className="h-5 w-5 mr-1" />
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={getUserInfo}>
-                    {userInfo ? userInfo.name : "Profile"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/settings">Settings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          )}
+
+            <Button
+              onClick={() => router.push("/sign-up")}
+              className="bg-green-600 hover:bg-green-800 text-white text-sm 
+              md:text-base"
+            >
+              <SignUpButton />
+            </Button>
+          </SignedOut>
         </div>
       </div>
     </header>
