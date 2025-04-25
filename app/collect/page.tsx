@@ -127,50 +127,69 @@ export default function CollectPage() {
       toast.error("Missing required information for verification.");
       return;
     }
-
+  
     setVerificationStatus("verifying");
-
+  
     try {
       const genAI = new GoogleGenerativeAI(geminiApiKey!);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+  
       const base64Data = readFileAsBase64(verificationImage);
-
+  
       const imageParts = [
         {
           inlineData: {
             data: base64Data,
-            mimeType: "image/jpeg", // Adjust this if you know the exact type
+            mimeType: verificationImage.type || "image/jpeg",
           },
         },
       ];
-
-      const prompt = `You are an expert in waste management and recycling. Analyze this image and provide:
-        1. Confirm if the waste type matches: ${selectedTask.wasteType}
-        2. Estimate if the quantity matches: ${selectedTask.amount}
-        3. Your confidence level in this assessment (as a percentage)
-        
-        Respond in JSON format like this:
-        {
-          "wasteTypeMatch": true/false,
-          "quantityMatch": true/false,
-          "confidence": confidence level as a number between 0 and 1
-        }`;
-
+  
+      const prompt = `You are an expert in waste management and recycling. 
+      This is a BEFORE and AFTER cleaning verification task.
+      The image shows a location AFTER waste was collected. The waste was originally:
+      - Waste type: ${selectedTask.wasteType}
+      - Estimated quantity: ${selectedTask.amount}
+      
+      Important: A clean area CONFIRMS that waste was collected properly.
+      
+      Respond in JSON format like this:
+      {
+        "wasteTypeMatch": true,
+        "quantityMatch": true,
+        "confidence": 0.95
+      }`;
       const result = await model.generateContent([prompt, ...imageParts]);
       const response = await result.response;
       const text = response.text();
-
+  
       try {
-        const parsedResult = JSON.parse(text);
+        // Extract JSON from the response
+        const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```|(\{[\s\S]*\})/);
+        const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[2]) : text;
+        
+        // Clean the string to handle potential formatting issues
+        const cleanedJson = jsonString.replace(/^```(json)?|```$/g, '').trim();
+        
+        const parsedResult = JSON.parse(cleanedJson);
         console.log("ParsedResult", parsedResult);
+        
+        // Validate that the parsed result has the expected properties
+        if (
+          typeof parsedResult.wasteTypeMatch !== 'boolean' ||
+          typeof parsedResult.quantityMatch !== 'boolean' ||
+          typeof parsedResult.confidence !== 'number'
+        ) {
+          throw new Error("Response missing required properties or has invalid types");
+        }
+        
         setVerificationResult({
           wasteTypeMatch: parsedResult.wasteTypeMatch,
           quantityMatch: parsedResult.quantityMatch,
           confidence: parsedResult.confidence,
         });
         setVerificationStatus("success");
-
+  
         if (
           parsedResult.wasteTypeMatch &&
           parsedResult.quantityMatch &&
@@ -178,13 +197,13 @@ export default function CollectPage() {
         ) {
           await handleStatusChange(selectedTask.id, "verified");
           const earnedReward = Math.floor(Math.random() * 50) + 10; // Random reward between 10 and 59
-
+  
           // Save the reward
           await saveReward(user.id, earnedReward);
-
+  
           // Save the collected waste
           await saveCollectedWaste(selectedTask.id, user.id, parsedResult);
-
+  
           setReward(earnedReward);
           toast.success(
             `Verification successful! You earned ${earnedReward} tokens!`,
@@ -203,17 +222,17 @@ export default function CollectPage() {
           );
         }
       } catch (error) {
-        console.log(error);
-
-        console.error("Failed to parse JSON response:", text);
+        console.error("Failed to parse JSON response:", error);
+        console.log("Raw text response:", text);
         setVerificationStatus("failure");
+        toast.error("Failed to process the verification result. Please try again.");
       }
     } catch (error) {
       console.error("Error verifying waste:", error);
       setVerificationStatus("failure");
+      toast.error("An error occurred during verification. Please try again.");
     }
   };
-
   const filteredTask = tasks.filter((task) =>
     task.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
